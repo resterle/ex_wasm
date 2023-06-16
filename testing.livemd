@@ -1,0 +1,48 @@
+# Untitled notebook
+
+## Testing
+
+```wat
+(module
+  (func $add (param $lhs i32) (param $rhs i32) (result i32)
+    local.get $lhs
+    local.get $rhs
+    i32.add)
+  (export "add" (func $add))
+)
+```
+
+```elixir
+module = ExWasm.load("./add.wasm")
+```
+
+```elixir
+alias ExWasm.Interpreter.Embedding
+
+embedding =
+  Embedding.new()
+  |> Embedding.put_function("host", "log", &IO.puts/1)
+  |> Embedding.put_variable("host", "var", :i32, 4711)
+```
+
+```elixir
+instance = ExWasm.Interpreter.new(module, embedding)
+```
+
+```elixir
+ExWasm.Interpreter.execute(instance, "add", embedding, [{:i32, 334}, {:i32, 9}])
+```
+
+```elixir
+module = ExWasm.load("./add.wasm")
+instance = ExWasm.Interpreter.new(module)
+ExWasm.Interpreter.execute(instance, "add", [333, 9])
+```
+
+```elixir
+module = ExWasm.load("./examples/tee.wasm")
+```
+
+```elixir
+instance = ExWasm.Interpreter.new(module)
+```
