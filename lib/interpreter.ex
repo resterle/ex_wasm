@@ -1,6 +1,7 @@
 defmodule ExWasm.Interpreter do
   alias ExWasm.Section
   alias ExWasm.Interpreter.Embedding
+  alias ExWasm.Interpreter.Execution
   alias ExWasm.Interpreter
 
   defstruct [:embedding, :function_instance, :exports, :start_index, :globals, :memory]
@@ -18,15 +19,36 @@ defmodule ExWasm.Interpreter do
     with {:exports, true} <- {:exports, exports?(instance, name)},
           %{type: :function, index: index} = export(instance, name),
           {:internal, {params_types, result_type}, {locals, code}} = function_by_index(instance, index),
-          {:execution, {:ok, execution}} <- {:execution, Interpreter.Execution.new(code, instance.globals, locals, params_types, result_type)},
-          {:execution, {:ok, execution}} <- {:execution, Interpreter.Execution.initialize(execution, embedding, params)},
-          {:execution, {:ok, execution}} <- {:execution, Interpreter.Execution.execute(execution)},
-          {:result, {:ok, result}} <- {:result, Interpreter.Execution.result(execution)} do
+          {:execution, {:ok, execution}} <- {:execution, Execution.new(code, instance.globals, locals, params_types, result_type)},
+          {:execution, {:ok, execution}} <- {:execution, Execution.initialize(execution, embedding, params)},
+          {:execution, {:ok, execution}} <- {:execution, Execution.execute(execution)},
+          {:result, {:ok, result}} <- {:result, Execution.result(execution)} do
       {:ok, result, execution}
     else
       {:exports, false} -> {:error, "Function \"#{name}\" not exported by module"}
       {:execution, error} -> error
       _other -> {:error, "Unknown error"}
+    end
+  end
+
+  def init_execution(%__MODULE__{} = instance, name, %Interpreter.Embedding{} = embedding, params \\ []) do
+    with {:exports, true} <- {:exports, exports?(instance, name)},
+          %{type: :function, index: index} = export(instance, name),
+          {:internal, {params_types, result_type}, {locals, code}} = function_by_index(instance, index),
+          {:execution, {:ok, execution}} <- {:execution, Execution.new(code, instance.globals, locals, params_types, result_type)},
+          {:execution, {:ok, execution}} <- {:execution, Execution.initialize(execution, embedding, params)} do
+      {:ok, execution}
+    else
+      {:exports, false} -> {:error, "Function \"#{name}\" not exported by module"}
+      {:execution, error} -> error
+      _other -> {:error, "Unknown error"}
+    end
+  end
+
+  def step(%Execution{} = execution) do
+    case Execution.step(execution) do
+      {:result, new_execution} -> Execution.result(new_execution)
+      other -> other
     end
   end
 

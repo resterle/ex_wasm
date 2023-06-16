@@ -1,4 +1,4 @@
-# Untitled notebook
+# Testing ex_wasm
 
 ## Testing
 
@@ -27,6 +27,19 @@ embedding =
 
 ```elixir
 instance = ExWasm.Interpreter.new(module, embedding)
+```
+
+```elixir
+{:ok, execution} =
+  ExWasm.Interpreter.init_execution(instance, "add", embedding, [{:i32, 334}, {:i32, 9}])
+```
+
+```elixir
+{:step, execution} = ExWasm.Interpreter.step(execution)
+```
+
+```elixir
+{:step, execution} = ExWasm.Interpreter.step(execution)
 ```
 
 ```elixir

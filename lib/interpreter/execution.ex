@@ -24,6 +24,7 @@ defmodule ExWasm.Interpreter.Execution do
     else
       {:pc_in_range, :false} -> {:result, state}
       {:opcode, error} -> error
+      other -> {:error, other}
     end
   end
 
